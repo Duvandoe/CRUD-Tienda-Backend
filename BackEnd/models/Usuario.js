@@ -13,9 +13,9 @@ const usuarioSchema = new mongoose.Schema({
   },
 });
 
-usuarioSchema.pre("save", async function (next) {
-  if (!this.isModified("contrasena")) return next();
-  this.contrasena = await bcrypt.hash(this.contrasena, 10);
-});
+//usuarioSchema.pre("save", async function (next) {
+  //if (!this.isModified("contrasena")) return next();
+  //this.contrasena = await bcrypt.hash(this.contrasena, 10);
+//});
 
 module.exports = mongoose.model("Usuario", usuarioSchema);

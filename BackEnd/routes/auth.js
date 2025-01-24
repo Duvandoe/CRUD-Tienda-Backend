@@ -15,16 +15,20 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ msg: "Usuario ya existe" });
     }
 
-    // Crear nuevo usuario
-    const usuario = new Usuario({ email, contrasena });
+    const passwordHash = await bcrypt.hash(contrasena, 10);
+    const newUser = new Usuario({ email, contrasena: passwordHash });
+    console.log("Datos recibidos en el registro:", req.body);
+    console.log("Hash generado:", passwordHash);
+    const userSaved = await newUser.save();
+    console.log("Usuario guardado en la base de datos:", userSaved);
+    const token = jwt.sign({ id: userSaved._id }, "your_secret_key", { expiresIn: "1h" });
 
-    // Encriptar la contraseña antes de guardar
-    const salt = await bcrypt.genSalt(10);
-    usuario.contrasena = await bcrypt.hash(contrasena, salt);
-    console.log('Contraseña encriptada:', usuario.contrasena);
 
-    await usuario.save();
-    res.status(201).json({ msg: "Usuario registrado exitosamente" });
+res.cookie("token", token);
+res.json({
+  _id: userSaved._id,
+  email: userSaved.email,
+});
   } catch (error) {
     res.status(500).json({ msg: "Error en el servidor" });
   }
@@ -35,29 +39,36 @@ router.post("/login", async (req, res) => {
   const { email, contrasena } = req.body;
 
   try {
-    // Verificar si el usuario existe
     const usuario = await Usuario.findOne({ email });
     if (!usuario) {
       return res.status(400).json({ msg: "Usuario no encontrado" });
     }
 
-    // Comparar la contraseña
-    const esValida = await bcrypt.compare(contrasena, usuario.contrasena);
-    console.log('Contraseña ingresada:', contrasena);
-    console.log('Contraseña en la base de datos:', usuario.contrasena);
-    console.log('Resultado de la comparación:', esValida); // Ver el valor de la comparación
-
-    if (!esValida) {
+    const esContrasenaValida = await bcrypt.compare(contrasena, usuario.contrasena);
+    if (!esContrasenaValida) {
       return res.status(400).json({ msg: "Contraseña incorrecta" });
     }
 
-    // Crear y enviar el token JWT
-    const token = jwt.sign({ usuarioId: usuario._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
-    res.json({ token });
+    console.log("Datos recibidos en el login:", req.body);
+
+    const token = jwt.sign({ id: usuario._id }, "your_secret_key", { expiresIn: "1h" });
+
+    res.cookie("token", token);
+    res.json({
+      token,
+      _id: usuario._id,
+      email: usuario.email,
+    });
   } catch (error) {
-    console.error('Error al iniciar sesión:', error); // Error más detallado
+    console.error('Error al iniciar sesión:', error);
     res.status(500).json({ msg: "Error en el servidor" });
   }
+});
+
+// Logout de usuario
+router.post("/logout", (req, res) => {
+  res.clearCookie("token"); // Limpiar la cookie 'token'
+  res.json({ msg: "Sesión cerrada correctamente" });
 });
 
 
