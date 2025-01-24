@@ -1,19 +1,43 @@
 const jwt = require('jsonwebtoken');
-const secretKey = 'mi_secreto'; // Asegúrate de que sea segura y no esté en el código fuente
 
 const verificarToken = (req, res, next) => {
-  const token = req.headers['authorization']?.split(' ')[1]; // Extrae el token del header 'Authorization'
+  // Verificar los encabezados de la solicitud
+  console.log("Encabezados de la solicitud:", req.headers);
+
+  // Obtener el token del encabezado Authorization
+  const token = req.headers['authorization']?.split(' ')[1];
+
+  // Imprimir el token recibido para ver si es correcto
+  console.log("Token recibido:", token);
+
+  // Si no hay token, retornar error
   if (!token) {
-    return res.status(401).json({ msg: 'No se proporcionó token de autenticación' });
+    return res.status(401).json({ msg: "Token no proporcionado" });
   }
 
-  jwt.verify(token, secretKey, (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ msg: 'Token inválido o expirado' });
+  try {
+    // Decodificar el token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Imprimir el contenido decodificado del token (lo que contiene el payload)
+    console.log("Token decodificado:", decoded);
+
+    // Imprimir el valor de JWT_SECRET para confirmar que la clave secreta está configurada
+    console.log("JWT_SECRET:", process.env.JWT_SECRET);
+
+    // Agregar los datos del usuario al objeto req para que estén disponibles en la siguiente ruta
+    req.user = decoded;
+    next();
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ msg: "Token expirado" });
     }
-    req.user = decoded; // Agregar la información del usuario al request
-    next(); // Continuar con la siguiente función (la ruta original)
-  });
+    res.status(401).json({ msg: "Token inválido" });
+  }
 };
 
 module.exports = verificarToken;
+
+
+
+

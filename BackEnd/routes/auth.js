@@ -51,7 +51,7 @@ router.post("/login", async (req, res) => {
 
     console.log("Datos recibidos en el login:", req.body);
 
-    const token = jwt.sign({ id: usuario._id }, "your_secret_key", { expiresIn: "1h" });
+    const token = jwt.sign({ id: usuario._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
     res.cookie("token", token);
     res.json({
@@ -66,9 +66,14 @@ router.post("/login", async (req, res) => {
 });
 
 // Logout de usuario
-router.post("/logout", (req, res) => {
-  res.clearCookie("token"); // Limpiar la cookie 'token'
-  res.json({ msg: "Sesión cerrada correctamente" });
+router.post('/logout', (req, res) => {
+  try {
+    // Eliminar el token del lado del servidor si se usa una sesión
+    res.clearCookie('token');  // Si usas cookies para guardar el token
+    res.status(200).json({ msg: 'Sesión cerrada correctamente' });
+  } catch (error) {
+    res.status(500).json({ msg: 'Error al cerrar sesión' });
+  }
 });
 
 
