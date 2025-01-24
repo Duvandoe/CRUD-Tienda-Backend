@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const secretKey = 'tu_clave_secreta'; // Asegúrate de que sea segura y no esté en el código fuente
+const secretKey = 'mi_secreto'; // Asegúrate de que sea segura y no esté en el código fuente
 
 const verificarToken = (req, res, next) => {
   const token = req.headers['authorization']?.split(' ')[1]; // Extrae el token del header 'Authorization'
